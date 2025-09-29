@@ -24,20 +24,10 @@ def survival_demographics():
     df['age_group'] = pd.cut(df['Age'], bins=age_bins, labels=age_labels,
                              right=True)
     
-    # Create a complete index of all possible combinations
-    from itertools import product
-    all_classes = sorted(df['Pclass'].unique())
-    all_sexes = sorted(df['Sex'].unique())
-    all_age_groups = age_labels
+    # Ensure age_group is categorical dtype
+    df['age_group'] = df['age_group'].astype('category')
     
-    # Create MultiIndex with all combinations
-    all_combinations = list(product(all_classes, all_sexes, all_age_groups))
-    complete_index = pd.MultiIndex.from_tuples(
-        all_combinations, 
-        names=['Pclass', 'Sex', 'age_group']
-    )
-    
-    # Group by class, sex, and age group (without observed=True to include empty groups)
+    # Group by class, sex, and age group (observed=False to include all categories)
     grouped = df.groupby(['Pclass', 'Sex', 'age_group'], observed=False)
     
     # Calculate survival statistics
@@ -45,9 +35,6 @@ def survival_demographics():
         'PassengerId': 'count',  # Total passengers
         'Survived': ['sum', 'mean']  # Survivors and survival rate
     }).round(3)
-    
-    # Reindex to include all combinations (fills missing with 0)
-    survival_stats = survival_stats.reindex(complete_index, fill_value=0)
     
     # Flatten column names
     survival_stats.columns = ['n_passengers', 'n_survivors', 'survival_rate']
@@ -57,6 +44,14 @@ def survival_demographics():
     
     # Reset index to make grouping columns regular columns
     survival_stats = survival_stats.reset_index()
+    
+    # Ensure age_group remains categorical after reset_index
+    age_labels = ['Child', 'Teen', 'Adult', 'Senior']
+    survival_stats['age_group'] = pd.Categorical(
+        survival_stats['age_group'], 
+        categories=age_labels, 
+        ordered=True
+    )
     
     # Sort for easy interpretation (by class, then sex, then age group)
     survival_stats = survival_stats.sort_values(['Pclass', 'Sex',
@@ -253,18 +248,16 @@ def determine_age_division():
            'data/titanic.csv')
     df = pd.read_csv(url)
     
-    # Calculate median age for each passenger class (excluding NaN values)
-    median_ages = df.groupby('Pclass')['Age'].median()
-    
-    # Create older_passenger column using map and comparison
-    df['class_median_age'] = df['Pclass'].map(median_ages)
-    df['older_passenger'] = df['Age'] > df['class_median_age']
+    # Create older_passenger column using transform method
+    df['older_passenger'] = df.groupby('Pclass')['Age'].transform(
+        lambda x: x > x.median()
+    )
     
     # Handle NaN values in Age column - set to False for missing ages
     df['older_passenger'] = df['older_passenger'].fillna(False)
     
-    # Drop the temporary column
-    df = df.drop('class_median_age', axis=1)
+    # Ensure it's boolean type
+    df['older_passenger'] = df['older_passenger'].astype(bool)
     
     return df
 
