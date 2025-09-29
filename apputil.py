@@ -19,7 +19,7 @@ def survival_demographics():
     df = pd.read_csv(url)
     
     # Rename columns to match test expectations first
-    df = df.rename(columns={'Pclass': 'pclass', 'Age': 'age'})
+    df = df.rename(columns={'Pclass': 'pclass', 'Age': 'age', 'Sex': 'sex'})
     
     # Create age categories using pd.cut
     age_bins = [0, 12, 19, 59, float('inf')]
@@ -31,7 +31,7 @@ def survival_demographics():
     df['age_group'] = df['age_group'].astype('category')
     
     # Group by class, sex, and age group (observed=False to include all categories)
-    grouped = df.groupby(['pclass', 'Sex', 'age_group'], observed=False)
+    grouped = df.groupby(['pclass', 'sex', 'age_group'], observed=False)
     
     # Calculate survival statistics
     survival_stats = grouped.agg({
@@ -57,7 +57,7 @@ def survival_demographics():
     )
     
     # Sort for easy interpretation (by class, then sex, then age group)
-    survival_stats = survival_stats.sort_values(['pclass', 'Sex',
+    survival_stats = survival_stats.sort_values(['pclass', 'sex',
                                                   'age_group'])
     
     # Reset index for clean display
@@ -84,7 +84,7 @@ def visualize_demographic():
         data,
         x='age_group',
         y='survival_rate',
-        color='Sex',
+        color='sex',
         facet_col='pclass',
         title='Survival Rates by Age Group, Sex, and Passenger Class',
         labels={
@@ -255,7 +255,7 @@ def determine_age_division():
     df = pd.read_csv(url)
     
     # Rename columns to match test expectations
-    df = df.rename(columns={'Pclass': 'pclass', 'Age': 'age'})
+    df = df.rename(columns={'Pclass': 'pclass', 'Age': 'age', 'Sex': 'sex'})
     
     # Create older_passenger column using transform method
     df['older_passenger'] = df.groupby('pclass')['age'].transform(

@@ -28,7 +28,7 @@ def test_survival_demographics():
     # Test 4: Check for the missing group (second class, female, seniors)
     missing_group = result[
         (result['pclass'] == 2) & 
-        (result['Sex'] == 'female') & 
+        (result['sex'] == 'female') & 
         (result['age_group'] == 'Senior')
     ]
     print(f"   ✓ Missing group found: {len(missing_group)} row(s)")
@@ -44,7 +44,7 @@ def test_survival_demographics():
         assert surv_rate == 0.0, f"Expected 0.0 survival rate, got {surv_rate}"
     
     # Test 6: Check required columns
-    expected_columns = ['pclass', 'Sex', 'age_group', 'n_passengers', 'n_survivors', 'survival_rate']
+    expected_columns = ['pclass', 'sex', 'age_group', 'n_passengers', 'n_survivors', 'survival_rate']
     for col in expected_columns:
         assert col in result.columns, f"Missing column: {col}"
     print(f"   ✓ All required columns present: {expected_columns}")
