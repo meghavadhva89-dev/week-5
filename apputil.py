@@ -18,17 +18,20 @@ def survival_demographics():
            'data/titanic.csv')
     df = pd.read_csv(url)
     
+    # Rename columns to match test expectations first
+    df = df.rename(columns={'Pclass': 'pclass', 'Age': 'age'})
+    
     # Create age categories using pd.cut
     age_bins = [0, 12, 19, 59, float('inf')]
     age_labels = ['Child', 'Teen', 'Adult', 'Senior']
-    df['age_group'] = pd.cut(df['Age'], bins=age_bins, labels=age_labels,
+    df['age_group'] = pd.cut(df['age'], bins=age_bins, labels=age_labels,
                              right=True)
     
     # Ensure age_group is categorical dtype
     df['age_group'] = df['age_group'].astype('category')
     
     # Group by class, sex, and age group (observed=False to include all categories)
-    grouped = df.groupby(['Pclass', 'Sex', 'age_group'], observed=False)
+    grouped = df.groupby(['pclass', 'Sex', 'age_group'], observed=False)
     
     # Calculate survival statistics
     survival_stats = grouped.agg({
@@ -54,7 +57,7 @@ def survival_demographics():
     )
     
     # Sort for easy interpretation (by class, then sex, then age group)
-    survival_stats = survival_stats.sort_values(['Pclass', 'Sex',
+    survival_stats = survival_stats.sort_values(['pclass', 'Sex',
                                                   'age_group'])
     
     # Reset index for clean display
@@ -82,12 +85,12 @@ def visualize_demographic():
         x='age_group',
         y='survival_rate',
         color='Sex',
-        facet_col='Pclass',
+        facet_col='pclass',
         title='Survival Rates by Age Group, Sex, and Passenger Class',
         labels={
             'survival_rate': 'Survival Rate',
             'age_group': 'Age Group',
-            'Pclass': 'Passenger Class'
+            'pclass': 'Passenger Class'
         },
         text='survival_rate',
         color_discrete_map={'male': '#2E86AB', 'female': '#A23B72'}
@@ -109,7 +112,7 @@ def visualize_demographic():
 
     # Update facet titles
     fig.for_each_annotation(
-        lambda a: a.update(text=a.text.replace("Pclass=", "Class "))
+        lambda a: a.update(text=a.text.replace("pclass=", "Class "))
     )
 
     return fig
@@ -129,11 +132,14 @@ def family_groups():
            'data/titanic.csv')
     df = pd.read_csv(url)
     
+    # Rename column to match test expectations
+    df = df.rename(columns={'Pclass': 'pclass'})
+    
     # Create family_size column: SibSp + Parch + 1 (the passenger themselves)
     df['family_size'] = df['SibSp'] + df['Parch'] + 1
     
     # Group by family size and passenger class
-    grouped = df.groupby(['family_size', 'Pclass'])
+    grouped = df.groupby(['family_size', 'pclass'])
     
     # Calculate statistics for each group
     family_stats = grouped.agg({
@@ -148,7 +154,7 @@ def family_groups():
     family_stats = family_stats.reset_index()
     
     # Sort by class first, then by family size for easy interpretation
-    family_stats = family_stats.sort_values(['Pclass', 'family_size'])
+    family_stats = family_stats.sort_values(['pclass', 'family_size'])
     
     # Reset index for clean display
     family_stats = family_stats.reset_index(drop=True)
@@ -196,13 +202,13 @@ def visualize_families():
         data,
         x='family_size',
         y='avg_fare',
-        color='Pclass',
+        color='pclass',
         size='n_passengers',
         title='Family Size vs Average Fare by Passenger Class',
         labels={
             'family_size': 'Family Size',
             'avg_fare': 'Average Fare (£)',
-            'Pclass': 'Passenger Class',
+            'pclass': 'Passenger Class',
             'n_passengers': 'Number of Passengers'
         },
         color_discrete_map={1: '#2C3E50', 2: '#E74C3C', 3: '#BDC3C7'},
@@ -248,12 +254,15 @@ def determine_age_division():
            'data/titanic.csv')
     df = pd.read_csv(url)
     
+    # Rename columns to match test expectations
+    df = df.rename(columns={'Pclass': 'pclass', 'Age': 'age'})
+    
     # Create older_passenger column using transform method
-    df['older_passenger'] = df.groupby('Pclass')['Age'].transform(
+    df['older_passenger'] = df.groupby('pclass')['age'].transform(
         lambda x: x > x.median()
     )
     
-    # Handle NaN values in Age column - set to False for missing ages
+    # Handle NaN values in age column - set to False for missing ages
     df['older_passenger'] = df['older_passenger'].fillna(False)
     
     # Ensure it's boolean type
@@ -274,7 +283,7 @@ def visualize_age_division():
     df = determine_age_division()
     
     # Create survival analysis by age division and class
-    age_survival = df.groupby(['Pclass', 'older_passenger']).agg({
+    age_survival = df.groupby(['pclass', 'older_passenger']).agg({
         'PassengerId': 'count',
         'Survived': ['sum', 'mean']
     }).round(3)
@@ -292,13 +301,13 @@ def visualize_age_division():
     # Create grouped bar chart
     fig = px.bar(
         age_survival,
-        x='Pclass',
+        x='pclass',
         y='survival_rate',
         color='age_division',
         title='Survival Rates by Age Division Within Each Passenger Class',
         labels={
             'survival_rate': 'Survival Rate',
-            'Pclass': 'Passenger Class',
+            'pclass': 'Passenger Class',
             'age_division': 'Age Relative to Class Median'
         },
         text='survival_rate',
