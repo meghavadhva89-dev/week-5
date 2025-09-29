@@ -257,16 +257,23 @@ def determine_age_division():
     # Rename columns to match test expectations
     df = df.rename(columns={'Pclass': 'pclass', 'Age': 'age', 'Sex': 'sex'})
     
-    # Create older_passenger column using transform method
-    df['older_passenger'] = df.groupby('pclass')['age'].transform(
-        lambda x: x > x.median()
-    )
+    # Create older_passenger column that mirrors NaN values from age
+    # First, calculate median age for each passenger class (excluding NaN values)
+    median_ages = df.groupby('pclass')['age'].median()
     
-    # Handle NaN values in age column - set to False for missing ages
-    df['older_passenger'] = df['older_passenger'].fillna(False)
+    # Create the comparison, but we need to explicitly preserve NaN values
+    df['class_median'] = df['pclass'].map(median_ages)
     
-    # Ensure it's boolean type
-    df['older_passenger'] = df['older_passenger'].astype(bool)
+    # Create older_passenger column with explicit NaN handling
+    df['older_passenger'] = df['age'] > df['class_median']
+    
+    # Where age is NaN, set older_passenger to NaN 
+    # Convert to object dtype first to allow mixed bool/NaN values
+    df['older_passenger'] = df['older_passenger'].astype('object')
+    df.loc[df['age'].isna(), 'older_passenger'] = pd.NA
+    
+    # Clean up temporary column
+    df = df.drop('class_median', axis=1)
     
     return df
 
